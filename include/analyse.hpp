@@ -14,6 +14,7 @@
 #include <ranges>
 #include <sstream>
 #include <string>
+#include <utility>
 #include <variant>
 #include <vector>
 
@@ -40,11 +41,24 @@ namespace rs = std::ranges;
  */
 auto AnalyseFunctions(const std::vector<std::string> &files,
                       const analyzer::metric::MetricExtractor &metric_extractor) {
-    // здесь ваш код
+
+    std::vector<std::pair<function::Function, metric::MetricResults>> result;
+    function::FunctionExtractor extractor;
+
+    for (const auto &filename : files) {
+
+        file::File file(filename);
+        auto functions = extractor.Get(file);
+
+        for (auto &fn : functions)
+            result.emplace_back(std::move(fn), metric_extractor.Get(fn));
+    }
+
+    return result;
 }
 
 /**
- * 
+ *
  * @brief Группирует результаты анализа по классам.
  *
  * Эта функция:
@@ -62,7 +76,17 @@ auto AnalyseFunctions(const std::vector<std::string> &files,
  * действительно исчезают из результата.
  */
 auto SplitByClasses(const auto &analysis) {
-    // здесь ваш код
+
+    return analysis | std::views::filter([](const auto &pr) {
+               const auto &[fn, _] = pr;
+               return fn.class_name.has_value();
+           }) |
+           std::views::chunk_by([](const auto &curr, const auto &next) {
+               const auto &[fn_curr, _] = curr;
+               const auto &[fn_next, __] = next;
+
+               return fn_curr.class_name.value() == fn_next.class_name.value();
+           });
 }
 
 /**
@@ -74,7 +98,21 @@ auto SplitByClasses(const auto &analysis) {
  * - Использует `chunk_by`, поэтому **порядок функций в `analysis` должен быть по файлам**.
  */
 auto SplitByFiles(const auto &analysis) {
-    // здесь ваш код
+    // clang-format off
+
+    return analysis | 
+        std::views::filter([](const auto &pr) {
+            const auto &[fn, _] = pr;
+            return !fn.class_name.has_value();
+        }) | 
+        std::views::chunk_by([](const auto &curr, const auto &next) {
+             const auto &[fn_curr, _] = curr;
+             const auto &[fn_next, __] = next;
+
+             return fn_curr.filename == fn_next.filename;
+        });
+
+    // clang-format on
 }
 
 /**
@@ -85,9 +123,9 @@ auto SplitByFiles(const auto &analysis) {
  *   (то есть по каждой функции и её метрикам).
  * - Передаёт результаты метрик (`elem.second`) в аккумулятор через `AccumulateNextFunctionResults`.
  */
-void AccumulateFunctionAnalysis(const auto &analysis,
-                                const analyzer::metric_accumulator::MetricsAccumulator &accumulator) {
-    // здесь ваш код
-}
+void AccumulateFunctionAnalysis(const auto &analysis, analyzer::metric_accumulator::MetricsAccumulator &accumulator) {
 
+    for (const auto &m_res : analysis)
+        accumulator.AccumulateNextFunctionResults(m_res.second);
+}
 }  // namespace analyzer

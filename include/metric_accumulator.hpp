@@ -43,9 +43,9 @@ struct MetricsAccumulator {
     const Accumulator &GetFinalizedAccumulator(const std::string &metric_name) const {
         auto metric_accululator = accumulators.at(metric_name);
         metric_accululator->Finalize();
-        return dynamic_cast<const Accumulator&>(*metric_accululator);
+        return dynamic_cast<const Accumulator &>(*metric_accululator);
     }
-    void AccumulateNextFunctionResults(const std::vector<metric::MetricResult> &metric_results) const;
+    void AccumulateNextFunctionResults(const std::vector<metric::MetricResult> &metric_results);
 
     void ResetAccumulators();
 

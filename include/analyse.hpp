@@ -6,6 +6,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <filesystem>
+#include <format>
 #include <fstream>
 #include <functional>
 #include <iomanip>
@@ -13,6 +14,7 @@
 #include <print>
 #include <ranges>
 #include <sstream>
+#include <stdexcept>
 #include <string>
 #include <utility>
 #include <variant>
@@ -47,11 +49,21 @@ auto AnalyseFunctions(const std::vector<std::string> &files,
 
     for (const auto &filename : files) {
 
-        file::File file(filename);
-        auto functions = extractor.Get(file);
+        try {
 
-        for (auto &fn : functions)
-            result.emplace_back(std::move(fn), metric_extractor.Get(fn));
+            file::File file(filename);
+            auto functions = extractor.Get(file);
+
+            for (auto &fn : functions)
+                result.emplace_back(std::move(fn), metric_extractor.Get(fn));
+
+        } catch (const std::exception &e) {
+            throw std::runtime_error(std::format("Error during file processing {}. Reason: {}", filename, e.what()));
+
+        } catch (...) {
+            throw std::runtime_error(
+                std::format("Error during file processing {}. Reason: Unknown exception.", filename));
+        }
     }
 
     return result;

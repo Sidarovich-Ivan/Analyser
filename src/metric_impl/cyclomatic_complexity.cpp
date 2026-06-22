@@ -1,5 +1,7 @@
 #include "metric_impl/cyclomatic_complexity.hpp"
 
+#include <cstddef>
+#include <numeric>
 #include <unistd.h>
 
 #include <algorithm>
@@ -44,6 +46,20 @@ MetricResult::ValueType CyclomaticComplexityMetric::CalculateImpl(const function
         "conditional_expression",  // для тернарного оператора
     };
 
+    auto transformed = complexity_nodes | std::views::transform([&](std::string_view node) {
+                           int count = 0;
+                           std::size_t pos = function_ast.find(node, 0);
+
+                           while (pos != std::string::npos) {
+                               count++;
+                               pos = function_ast.find(node, pos + node.size());
+                           }
+
+                           return count;
+                       });
+
+    return std::accumulate(transformed.begin(), transformed.end(), 1);
+
     // === ВАШ КОД ДОЛЖЕН БЫТЬ ЗДЕСЬ ===
     //
     // Цель: подсчитать, сколько раз в строке `function_ast` встречаются
@@ -64,6 +80,5 @@ MetricResult::ValueType CyclomaticComplexityMetric::CalculateImpl(const function
     // сколько раз он встречается в `function_ast`, используя `std::string::find`
     // в цикле (это допустимо, так как вы работаете со строковым представлением AST,
     // а не с исходным кодом напрямую).
-
 }
 }  // namespace analyzer::metric::metric_impl

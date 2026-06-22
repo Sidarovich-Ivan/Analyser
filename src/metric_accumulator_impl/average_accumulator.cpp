@@ -14,8 +14,8 @@
 #include <ranges>
 #include <sstream>
 #include <string>
+#include <tuple>
 #include <variant>
-#include <vector>
 
 namespace analyzer::metric_accumulator::metric_accumulator_impl {
 
@@ -24,7 +24,7 @@ void AverageAccumulator::Accumulate(const metric::MetricResult &metric_result) {
     count++;
 }
 void AverageAccumulator::Finalize() {
-    average = static_cast<double>(sum) / count;
+    average = count == 0 ? 0.0 : static_cast<double>(sum) / count;
     is_finalized = true;
 }
 

@@ -4,6 +4,8 @@ add_executable(${target}
     tests/code_lines_count.cpp
     tests/cyclomatic_complexity.cpp
     tests/parameters_count.cpp
+    tests/naming_style.cpp
+    tests/check_metric.cpp
 )
 
 target_link_libraries(${target}
